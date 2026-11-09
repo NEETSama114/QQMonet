@@ -45,7 +45,7 @@
 1. 在 LSPosed 管理器中启用本模块，作用域勾选 `com.tencent.mobileqq`（`scope.list` 已声明）
 2. 强制停止并重启 QQ
 3. 生效后进入各页面检查配色
-4. 如果某些页面未生效，可能是该组件走的渲染路径未覆盖，请前往 [Issues](https://github.com/linx3141/TimMonet/issues) 或QQ群组反馈（附截图与日志最佳）
+4. 如果某些页面未生效，可能是该组件走的渲染路径未覆盖，请前往 [Issues](https://github.com/NEETSama114/QQMonet/issues) 反馈（附截图与日志最佳）
 
 ### 配色定制
 
@@ -74,12 +74,6 @@
 ```
 
 要求 JDK 17+。
-
----
-
-## 问题反馈
-
-请前往 **[GitHub Issues](https://github.com/linx3141/TimMonet/issues)** 或QQ群组提交反馈, 请携带好bug复现方法和设备信息。
 
 ---
 
