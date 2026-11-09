@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace 'com.timmonet'
-    compileSdk 37
+    compileSdk 36
 
     defaultConfig {
         applicationId 'io.github.linx3141.timmonet'
