@@ -16,7 +16,7 @@
 
 ## 项目简介(必看)
 
-- 这是一款基于 **Xposed API** 开发的 LSPosed 模块，作用于 **QQ 9.2.85（实验目标，尚未完成设备验证）**
+- 这是一款基于 **Xposed API** 开发的 LSPosed 模块，作用于 **QQ 9.2.85**
 - 推荐使用最新的LSPosed, 于lsposed.zip下载
 - 在模块内部完成 Material You 调色板计算，**不依赖系统莫奈引擎**（低版本 Android 同样可用）
 - 将 QQ 的品牌蓝与中性色阶整体映射为壁纸/种子色派生的 Material 3 配色：
