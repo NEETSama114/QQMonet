@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace 'com.qqmonet'
+    namespace 'com.timmonet'
     compileSdk 37
 
     defaultConfig {
