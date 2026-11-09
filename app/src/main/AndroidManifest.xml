@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:label="@string/app_name"
+        android:description="@string/app_description"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:hasCode="true">
+
+        <!-- Xposed 模块声明：min=93(兼容 LSPosed 1.9 世代 runtime)，target=102 -->
+        <meta-data
+            android:name="xposedmodule"
+            android:value="true" />
+        <meta-data
+            android:name="xposedminversion"
+            android:value="93" />
+        <meta-data
+            android:name="xposeddescription"
+            android:value="@string/app_description" />
+
+        <!-- 宿主(QQ 进程)里的设置面板改设置时，通过显式广播把新值发到这里落盘：
+             宿主的 getRemotePreferences() 是只读实现，写不了远端 prefs。
+             无 intent-filter → 只能用显式组件调用。 -->
+        <receiver
+            android:name=".settings.SettingsWriteReceiver"
+            android:exported="true" />
+
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="true"
+            android:theme="@style/Theme.TimMonet"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+    </application>
+
+    <!-- 让本模块能看见宿主(反向的包可见性，用于宿主/模块之间的常规查询) -->
+    <queries>
+        <package android:name="com.tencent.mobileqq" />
+    </queries>
+</manifest>
