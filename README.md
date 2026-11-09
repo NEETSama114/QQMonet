@@ -4,7 +4,7 @@
 <a href="https://github.com/NEETSama114/QQMonet/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/NEETSama114/QQMonet?label=Stars"></a>
 <a href="https://github.com/NEETSama114/QQMonet/releases"><img alt="GitHub all releases" src="https://img.shields.io/github/downloads/NEETSama114/QQMonet/total?label=Downloads"></a>
 
-<p>从 TimMonet 移植到 QQ 9.2.85 的实验版本；目标是适配 Material You「莫奈取色」与深色主题</p>
+<p>从 TimMonet 移植到 QQ 9.2.85 的实验版本</p>
 
 <p>
   <b>支持框架</b>：
