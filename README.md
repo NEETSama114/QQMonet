@@ -5,7 +5,6 @@
 <a href="https://github.com/linx3141/TimMonet/releases"><img alt="GitHub all releases" src="https://img.shields.io/github/downloads/linx3141/TimMonet/total?label=Downloads"></a>
 <a href="https://github.com/linx3141/TimMonet/releases/latest"><img alt="GitHub latest release" src="https://img.shields.io/github/v/release/linx3141/TimMonet"></a>
 
-src="https://img.shields.io/badge/QQ%E7%BE%A4-1051328541-12B7F5?logo=tencentqq&logoColor=white"></a>
 
 <p>从 TimMonet 移植到 QQ 9.2.85 的实验版本；目标是适配 Material You「莫奈取色」与深色主题</p>
 
