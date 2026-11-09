@@ -1,4 +1,3 @@
-
 name: Build QQMonet APK
 
 on:
@@ -32,7 +31,7 @@ jobs:
             exit 1
           fi
           yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses
-          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --install "platforms;android-37" "platform-tools"
+          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --install "platforms;android-36" "platform-tools"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
