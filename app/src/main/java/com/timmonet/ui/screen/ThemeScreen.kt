@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.Brightness3
 import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.Brightness7
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.DesignServices
 import androidx.compose.material.icons.rounded.Style
@@ -143,37 +144,88 @@ fun ThemeScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            // 取色方式：保留原来的“系统动态取色”和“手动预设颜色”两种模式。
+            // keyColor == 0 仍表示系统 Monet，因此不需要修改设置协议或 Hook 端逻辑。
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                item {
-                    ColorButtonMaterial(
-                        color = Color.Unspecified,
-                        isSelected = keyColor == 0,
-                        isDark = isDark,
-                        isAmoled = isAmoled,
-                        paletteStyle = paletteStyle,
-                        colorSpec = colorSpec,
-                        onClick = {
-                            onSetKeyColor(0)
-                        }
-                    )
+                Text(
+                    text = "取色方式",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
+                ) {
+                    ExpressiveToggleButton(
+                        checked = keyColor == 0,
+                        onCheckedChange = { checked ->
+                            if (checked) {
+                                haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+                                // 0 = 跟随 Android 系统 Monet/壁纸颜色
+                                onSetKeyColor(0)
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .semantics { role = Role.RadioButton },
+                        shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
+                    ) {
+                        Icon(Icons.Filled.Palette, contentDescription = "动态取色")
+                        Spacer(Modifier.size(8.dp))
+                        Text("跟随系统")
+                    }
+
+                    ExpressiveToggleButton(
+                        checked = keyColor != 0,
+                        onCheckedChange = { checked ->
+                            if (checked) {
+                                haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+                                // 从动态模式切换回来时给一个默认预设色；之后可继续选择下面的颜色。
+                                onSetKeyColor(keyColorOptions.first())
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .semantics { role = Role.RadioButton },
+                        shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
+                    ) {
+                        Icon(Icons.Rounded.Style, contentDescription = "自定义颜色")
+                        Spacer(Modifier.size(8.dp))
+                        Text("预设颜色")
+                    }
                 }
 
-                items(keyColorOptions) { color ->
-                    ColorButtonMaterial(
-                        color = Color(color),
-                        isSelected = keyColor == color,
-                        isDark = isDark,
-                        isAmoled = isAmoled,
-                        paletteStyle = paletteStyle,
-                        colorSpec = colorSpec,
-                        onClick = {
-                            onSetKeyColor(color)
-                        }
-                    )
+                Text(
+                    text = if (keyColor == 0) "跟随系统壁纸的 Monet 配色" else "选择一个固定的主题颜色",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // 只有选择“预设颜色”时才显示原来的颜色列表，避免和动态模式混淆。
+            AnimatedVisibility(visible = keyColor != 0) {
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    items(keyColorOptions) { color ->
+                        ColorButtonMaterial(
+                            color = Color(color),
+                            isSelected = keyColor == color,
+                            isDark = isDark,
+                            isAmoled = isAmoled,
+                            paletteStyle = paletteStyle,
+                            colorSpec = colorSpec,
+                            onClick = {
+                                onSetKeyColor(color)
+                            }
+                        )
+                    }
                 }
             }
 
