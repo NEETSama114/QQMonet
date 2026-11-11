@@ -5872,7 +5872,7 @@ private fun hookSummaryBadge(module: XposedModule) {
         val mode = SettingsBridge.current.colorMode
         if (mode == ColorMode.SYSTEM || mode == ColorMode.MONET_SYSTEM) {
             Log.i(TAG, "system night $prev -> $night (mode=$mode), restarting TIM")
-            SettingsBridge.killTimProcess()
+            SettingsBridge.killQQProcess()
         }
     }
 
