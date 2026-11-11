@@ -10,21 +10,21 @@ import com.timmonet.ui.theme.AppSettings
 import io.github.libxposed.api.XposedModule
 
 /**
- * TIM 进程侧：读取/保存模块设置。
+ * QQ 进程侧：读取/保存模块设置。
  *
  * 两条存储，按 `revision` 时间戳取新的那份（谁后改以谁为准）：
- *  1. **LSPosed 远端偏好**（模块 App 的 `shared_prefs/tim_monet_settings.xml`）——
+ *  1. **LSPosed 远端偏好**（模块 App 的远端设置偏好）——
  *     宿主侧是**只读**的：`getRemotePreferences()` 返回只读实现，`edit()` 抛
  *     `UnsupportedOperationException: Read only implementation`（实测 logcat 原文）。
- *  2. **宿主本地偏好**（TIM 私有目录 `tim_monet_host.xml`）—— 可写；TIM 设置页里
- *     那个模块面板改的值落在这里，重启后立即生效，不依赖任何跨进程投递。
+ *  2. **宿主本地偏好**（QQ 私有目录 `tim_monet_host.xml`）—— 可写；QQ 私有目录中
+ *     QQ 进程内保存的设置落在这里，重启后立即生效，不依赖跨进程投递。
  *
  * 宿主的改动还会**尽力广播**给模块 App（[SettingsWriteReceiver]）以同步远端偏好
  * 和模块界面 —— 实测部分 ROM 上宿主发出的广播投递不到模块 App，所以它只做
  * "锦上添花"，不作为生效条件。
  *
  * 历史坑：`attach()` 一旦抛异常，`prefs` 就停在 null，而旧 `write()` 是
- * `val prefs = prefs ?: return` —— 于是"在 TIM 进程内改设置"这件事**永久静默失效**。
+ * `val prefs = prefs ?: return` —— 于是"在宿主进程内改设置"这件事**永久静默失效**。
  * 现在改成惰性重试：任何一次访问发现还没接上，就再试一次（失败有退避）。
  */
 object SettingsBridge {
@@ -32,11 +32,11 @@ object SettingsBridge {
     private const val TAG = "TimMonet"
 
     /** 模块自己的包名（广播目标）。 */
-    private const val MODULE_PACKAGE = "io.github.linx3141.timmonet"
+    private const val MODULE_PACKAGE = "com.github.neetsama114.qqmonet"
 
     private const val SETTINGS_WRITE_RECEIVER = "com.timmonet.settings.SettingsWriteReceiver"
 
-    /** 宿主本地偏好文件名（TIM 私有目录）。 */
+    /** 宿主本地偏好文件名（QQ 私有目录）。 */
     private const val HOST_PREFS_NAME = "tim_monet_host"
 
     /** 远端偏好接不上时的重试间隔。 */
@@ -63,7 +63,7 @@ object SettingsBridge {
     var current: AppSettings = TimMonetSettings.defaults()
         private set
 
-    /** 宿主可写的本地偏好（TIM 私有目录）。 */
+    /** 宿主可写的本地偏好（QQ 私有目录）。 */
     @Volatile
     private var hostPrefs: SharedPreferences? = null
 
@@ -135,12 +135,12 @@ object SettingsBridge {
                 remotePrefs.registerOnSharedPreferenceChangeListener { _, _ ->
                     val next = TimMonetSettings.read(remotePrefs)
                     // 颜色相关设置(色彩标准/深浅模式/色彩风格/色域)变化时，热刷新
-                    // 无法覆盖底栏/顶栏等已绘制区域 → 需要强停 TIM 全量重建。
+                    // 无法覆盖底栏/顶栏等已绘制区域 → 需要强停 QQ 全量重建。
                     // ⚠️ 面板正在显示时必须**推迟到退出面板再重启**（否则用户刚点
                     // 一个开关，整个面板连同界面一起被重启掉，看起来像"点了没反应"）。
                     val paletteChanged = paletteDiffers(current, next)
                     current = next
-                    if (paletteChanged) requestTimRestart()
+                    if (paletteChanged) requestQQRestart()
                     MonetPalette.onSettingsChanged()
                 }
             }
@@ -161,49 +161,18 @@ object SettingsBridge {
             a.keyColor != b.keyColor ||
             a.amoledBlack != b.amoledBlack
 
-    /** 模块设置面板是否正在 TIM 进程里显示（面板期间的配色改动推迟到退出再重启）。 */
-    @Volatile
-    private var panelOpen = false
-
-    /** 有配色改动等待生效（面板退出时执行）。 */
-    @Volatile
-    private var pendingRestart = false
-
-    /**
-     * 面板开/关。关闭时若攒了配色改动就重启 TIM —— 这样"改完设置退出面板"
-     * 才生效，而不是在用户还在面板里点的时候把进程杀掉。
-     */
-    fun setPanelOpen(open: Boolean) {
-        panelOpen = open
-        if (!open) applyPendingRestart()
+    /** 配色发生变化后重启 QQ，使新调色板在下次冷启动时完整生效。 */
+    private fun requestQQRestart() {
+        killQQProcess()
     }
 
-    /** 退出面板/设置页时调用：有待生效的配色改动就重启 TIM。 */
-    fun applyPendingRestart() {
-        if (!pendingRestart) return
-        pendingRestart = false
-        Log.i(TAG, "pending palette change -> restart TIM on panel exit")
-        // 宿主本地偏好已在 write() 里同步写好 → 直接重启即可
-        killTimProcess()
-    }
-
-    /** 需要重启 TIM：面板开着就先记账，等退出面板再执行。 */
-    private fun requestTimRestart() {
-        if (panelOpen) {
-            pendingRestart = true
-            Log.i(TAG, "palette changed while panel open -> defer restart to panel exit")
-        } else {
-            killTimProcess()
-        }
-    }
-
-    /** 颜色相关设置变更 → 结束 TIM 进程（仅在 TIM 进程内执行；用户重开即全量新配色）。
+    /** 颜色相关设置变更 → 结束 QQ 进程（仅在 QQ 进程内执行；用户重开即全量新配色）。
      *  系统深浅色切换（自动模式下）也走这里，见 hookSystemNightChange。 */
-    internal fun killTimProcess() {
+    internal fun killQQProcess() {
         try {
             val app = context() ?: return
             if (app.packageName != "com.tencent.mobileqq") return
-            Log.i(TAG, "palette settings changed, restarting TIM")
+            Log.i(TAG, "palette settings changed, restarting QQ")
             android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                 try {
                     android.os.Process.killProcess(android.os.Process.myPid())
@@ -213,7 +182,7 @@ object SettingsBridge {
                 }
             }, 300L)
         } catch (t: Throwable) {
-            Log.w(TAG, "killTimProcess unavailable, palette applies on next cold start", t)
+            Log.w(TAG, "killQQProcess unavailable, palette applies on next cold start", t)
         }
     }
 
@@ -242,12 +211,12 @@ object SettingsBridge {
     }
 
     /**
-     * TIM 进程侧保存设置（TIM 设置页里的模块面板用）。
+     * QQ 进程侧保存设置（当前由宿主侧设置桥接使用）。
      *
      * ⚠️ **不能写远端偏好**：宿主拿到的 `getRemotePreferences()` 是只读实现，
      * `edit()` 抛 `UnsupportedOperationException: Read only implementation`
      * （实测 logcat 原文）。旧实现就死在这里 —— 写失败抛异常，后面的重启逻辑
-     * 根本没执行，表现为"面板里改了、退出再进又变回原样，TIM 也不重启"。
+     * 根本没执行，表现为"设置没有保存，QQ 也没有按预期重启"。
      *
      * 现在：① **写宿主本地偏好**（可写、权威）→ 宿主自己读的就是它，重启即生效；
      * ② **尽力广播**给模块 App（[SettingsWriteReceiver]）同步远端偏好与模块界面，
@@ -302,7 +271,7 @@ object SettingsBridge {
             Log.w(TAG, "send settings write broadcast failed (host store already saved)", t)
         }
         current = settings
-        if (paletteChanged) requestTimRestart()
+        if (paletteChanged) requestQQRestart()
         return stored
     }
 }
